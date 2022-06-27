@@ -1,37 +1,38 @@
 use std::fmt::Display;
 
+pub mod hanoi;
 pub mod sudoku;
 
 #[derive(Debug)]
-pub struct PazzleError {
+pub struct PuzzleError {
     error: String,
 }
-impl PazzleError {
+impl PuzzleError {
     fn new(str: impl Into<String>) -> Self {
         let error = str.into();
-        PazzleError { error }
+        PuzzleError { error }
     }
 }
-impl Display for PazzleError {
+impl Display for PuzzleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.error)
     }
 }
-type PazzleResult<T> = Result<T, PazzleError>;
+type PuzzleResult<T> = Result<T, PuzzleError>;
 
 pub trait Solver {
     /// パズルを実行する関数
-    fn run(&mut self) -> Result<(), PazzleError> {
+    fn run(&mut self) -> Result<(), PuzzleError> {
         while !self.has_finished()? {
             self.search()?;
         }
         Ok(())
     }
 
-    /// 解となり得る選択肢が一つも見つからなかったらPazzleErrorを返す。
+    /// 解となり得る選択肢が一つも見つからなかったらPuzzleErrorを返す。
     /// そうでない時は適当な探索をステップ実行する
-    fn search(&mut self) -> Result<(), PazzleError>;
+    fn search(&mut self) -> Result<(), PuzzleError>;
 
     /// 終了状態であればtrueを返す
-    fn has_finished(&self) -> PazzleResult<bool>;
+    fn has_finished(&self) -> PuzzleResult<bool>;
 }

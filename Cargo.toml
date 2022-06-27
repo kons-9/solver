@@ -9,6 +9,6 @@ edition = "2018"
 [dependencies]
 rayon = "1.5.3"
 
-[profile.dev]
-opt-level = 0
-debug = true
+# [profile.dev]
+# opt-level = 0
+# debug = true

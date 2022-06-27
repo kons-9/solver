@@ -1,11 +1,10 @@
-use super::PazzleError;
-use super::PazzleResult;
+use super::PuzzleError;
+use super::PuzzleResult;
 use super::Solver;
 use core::panic;
 use rayon::prelude::*;
 use std::collections::BTreeSet;
 use std::fmt::Display;
-use std::sync::atomic::fence;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -106,7 +105,7 @@ impl SudokuSolver {
             if i.len() != 9 {
                 panic!("invalid data");
             }
-            for (yind, c) in i.chars().enumerate() {
+            for c in i.chars() {
                 match c {
                     '*' | '0' => field[xind].push(Arc::new(Mutex::new(default_tree.clone()))),
                     n @ '1'..='9' => {
@@ -623,7 +622,7 @@ impl SudokuSolver {
     }
 
     /// suggestが一番小さなマスを用意する
-    fn pickup_elem(&self) -> PazzleResult<std::vec::IntoIter<(Data, usize, usize)>> {
+    fn pickup_elem(&self) -> PuzzleResult<std::vec::IntoIter<(Data, usize, usize)>> {
         let mut min_len = 9;
         let mut min_x = 0;
         let mut min_y = 0;
@@ -669,7 +668,7 @@ impl SudokuSolver {
 
     /// num_searchだけでうまく行かないような難しい数独は仮決めして行うしかないのでdfsを回す
     /// 仮決めする値は最もsuggestが小さいようなマスを発見してイテレータで回す
-    fn dfs(&mut self) -> PazzleResult<()> {
+    fn dfs(&mut self) -> PuzzleResult<()> {
         let mut elems = self.pickup_elem()?.into_iter();
         loop {
             // 元の状態を保持，失敗したときに戻れるようにしておく
@@ -699,11 +698,11 @@ impl SudokuSolver {
                 *self = clone;
             }
         }
-        Err(PazzleError {
+        Err(PuzzleError {
             error: "not found path".to_string(),
         })
     }
-    fn check_block(&self) -> PazzleResult<bool> {
+    fn check_block(&self) -> PuzzleResult<bool> {
         let flag = BLOCK_LEFT_UPPER_CORNER
             .par_iter()
             .map(|(cx, cy)| {
@@ -714,7 +713,7 @@ impl SudokuSolver {
                     if let FieldElement::NUM(ref n) = *self.field[x][y].lock().unwrap() {
                         let n = *n - 1;
                         if flags[n] {
-                            return Err(PazzleError::new("check_block"));
+                            return Err(PuzzleError::new("check_block"));
                         }
                         flags[n] = true;
                     } else {
@@ -726,7 +725,7 @@ impl SudokuSolver {
             .reduce(|| Ok(true), |a, b| Ok(a? & b?))?;
         Ok(flag)
     }
-    fn check_row(&self) -> PazzleResult<bool> {
+    fn check_row(&self) -> PuzzleResult<bool> {
         let rows = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         let flag = rows
             .into_par_iter()
@@ -736,7 +735,7 @@ impl SudokuSolver {
                     if let FieldElement::NUM(ref n) = *self.field[row][col].lock().unwrap() {
                         let n = *n - 1;
                         if flags[n] {
-                            return Err(PazzleError::new("check_row"));
+                            return Err(PuzzleError::new("check_row"));
                         }
                         flags[n] = true;
                     } else {
@@ -748,7 +747,7 @@ impl SudokuSolver {
             .reduce(|| Ok(true), |a, b| Ok(a? & b?))?;
         Ok(flag)
     }
-    fn check_column(&self) -> PazzleResult<bool> {
+    fn check_column(&self) -> PuzzleResult<bool> {
         let cols = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         let flag = cols
             .into_par_iter()
@@ -758,7 +757,7 @@ impl SudokuSolver {
                     if let FieldElement::NUM(ref n) = *self.field[row][col].lock().unwrap() {
                         let n = *n - 1;
                         if flags[n] {
-                            return Err(PazzleError::new("check_row"));
+                            return Err(PuzzleError::new("check_row"));
                         }
                         flags[n] = true;
                     } else {
@@ -773,14 +772,14 @@ impl SudokuSolver {
 }
 
 impl Solver for SudokuSolver {
-    // fn run(&mut self) -> Result<(), PazzleError> {
+    // fn run(&mut self) -> Result<(), PuzzleError> {
     //     Ok(())
     // }
-    // fn run(&mut self) -> PazzleResult<()>;
-    fn has_finished(&self) -> PazzleResult<bool> {
+    // fn run(&mut self) -> PuzzleResult<()>;
+    fn has_finished(&self) -> PuzzleResult<bool> {
         Ok(self.check_row()? && self.check_column()? && self.check_block()?)
     }
-    fn search(&mut self) -> PazzleResult<()> {
+    fn search(&mut self) -> PuzzleResult<()> {
         if self.num_search() {
             Ok(())
         } else {
@@ -861,16 +860,8 @@ mod test {
             "080002000",
             "000600100",
         ]);
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
-        sudoku.search();
+        sudoku.run().unwrap();
 
-        println!("{}", sudoku);
+        assert!(sudoku.has_finished().unwrap());
     }
 }
