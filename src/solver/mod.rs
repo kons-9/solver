@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+pub mod fifteen_puzzle;
 pub mod hanoi;
 pub mod nquene;
 pub mod sudoku;
@@ -32,7 +33,7 @@ pub trait Solver {
 
     /// 解となり得る選択肢が一つも見つからなかったらPuzzleErrorを返す。
     /// そうでない時は適当な探索をステップ実行する
-    fn search(&mut self) -> Result<(), PuzzleError>;
+    fn search(&mut self) -> PuzzleResult<()>;
 
     /// 終了状態であればtrueを返す
     fn has_finished(&self) -> PuzzleResult<bool>;
