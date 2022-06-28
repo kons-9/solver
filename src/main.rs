@@ -97,6 +97,14 @@ fn main() {
             end.as_secs(),
             end.subsec_nanos() / 1_000_000
         );
+        let start = Instant::now();
+        queue_solver.dfs();
+        let end = start.elapsed();
+        println!(
+            "dfs: {}.{:03}s",
+            end.as_secs(),
+            end.subsec_nanos() / 1_000_000
+        );
     }
 
     // println!("Hello, world!");

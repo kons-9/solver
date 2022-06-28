@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::BTreeSet,
+    sync::{Arc, Mutex},
+};
 
 use super::{PuzzleError, PuzzleResult, Solver};
 use rayon::prelude::*;
@@ -95,6 +98,34 @@ impl NqueneSolver {
             nums.swap(n - 1, i);
         }
     }
+    /// 深さ優先探索で解く
+    pub fn dfs(&self) -> Vec<Vec<usize>> {
+        let mut ans = Vec::new();
+        self._dfs(&mut Vec::new(), &mut ans);
+        ans
+    }
+
+    fn _dfs(&self, now: &mut Vec<usize>, ans: &mut Vec<Vec<usize>>) {
+        if now.len() == self.n {
+            ans.push(now.clone());
+            return;
+        }
+        let mut avail: BTreeSet<_> = (0..self.n).into_iter().collect();
+
+        for (idx, &i) in now.iter().enumerate() {
+            let diff = now.len() - idx;
+            avail.remove(&i);
+            avail.remove(&(i + diff));
+            if i >= diff {
+                avail.remove(&(i - diff));
+            }
+        }
+        for i in avail {
+            now.push(i);
+            self._dfs(now, ans);
+            now.pop();
+        }
+    }
 }
 impl Solver for NqueneSolver {
     fn has_finished(&self) -> PuzzleResult<bool> {
@@ -126,6 +157,15 @@ mod test {
             let solver = NqueneSolver::new(n);
             let ans = solver.simple();
             assert!(ans.len() == anslen[n - 1]);
+        }
+    }
+    #[test]
+    fn test_dfs() {
+        let anslen = [1, 0, 0, 2, 10, 4, 40, 92, 352, 724];
+        for n in 1..=anslen.len() {
+            let solver = NqueneSolver::new(n);
+            let ans = solver.dfs();
+            assert_eq!(ans.len(), anslen[n - 1]);
         }
     }
 }
