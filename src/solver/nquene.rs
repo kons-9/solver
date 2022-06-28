@@ -4,9 +4,12 @@ use super::{PuzzleError, PuzzleResult, Solver};
 use rayon::prelude::*;
 
 pub struct NqueneSolver {
+    /// queneの大きさ
     n: usize,
+    /// 出力された解
     anss: Vec<Vec<usize>>,
 }
+
 impl NqueneSolver {
     pub fn new(n: usize) -> Self {
         NqueneSolver {
@@ -14,6 +17,7 @@ impl NqueneSolver {
             anss: Default::default(),
         }
     }
+    /// 単純な順列探索
     pub fn simple(&self) -> Vec<Vec<usize>> {
         // n!通り調べる
         let mut nums: Vec<usize> = (0..self.n).into_iter().collect();
@@ -21,6 +25,7 @@ impl NqueneSolver {
         Self::apply_permutation(&mut nums, self.n, Self::check_quene, &mut ans);
         ans
     }
+    /// 並行処理を入れた単純な順列探索
     pub fn par_simple(&self) -> Arc<Mutex<Vec<Vec<usize>>>> {
         // n!通り調べる
         let mut nums: Vec<usize> = (0..self.n).into_iter().collect();
@@ -28,10 +33,12 @@ impl NqueneSolver {
         Self::par_apply_permutation(&mut nums, self.n, Self::check_quene, ans.clone());
         ans
     }
+    /// quenesが条件を満たしているかを確認する
     fn check_quene(quenes: &Vec<usize>) -> bool {
         for i in 0..quenes.len() {
             let qval = quenes[i];
             for j in (i + 1)..quenes.len() {
+                // 斜めにあるかどうかをチェックするにはxdiffとydiffが等しいかどうか判断すればいい
                 let diff = j - i;
                 if diff == qval.abs_diff(quenes[j]) {
                     return false;
@@ -40,16 +47,15 @@ impl NqueneSolver {
         }
         true
     }
+    /// apply_permutationを一段並行処理したバージョン
+    /// numsの[0,n)の要素のn!通りの順列を再帰的に生成して，それが条件fを満たすかどうか調べる
+    /// 満たした場合,ansに入れる
     fn par_apply_permutation(
         nums: &Vec<usize>,
         n: usize,
         f: fn(&Vec<usize>) -> bool,
         ans: Arc<Mutex<Vec<Vec<usize>>>>,
     ) {
-        // apply_permutationを一段並行処理したバージョン
-        // 順列を再帰的に生成してそれが条件fを満たすかどうか調べる
-        // 満たした場合,ansに入れる
-        // top + apply_permutation(n-1)
         if n == 1 {
             if f(nums) {
                 ans.lock().unwrap().push(nums.clone())
@@ -68,23 +74,22 @@ impl NqueneSolver {
             ans.lock().unwrap().extend(tmpans);
         });
     }
+    /// numsの[0,n)の要素のn!通りの順列を再帰的に生成して，それが条件fを満たすかどうか調べる
+    /// 満たした場合,ansに入れる
     fn apply_permutation(
         nums: &mut Vec<usize>,
         n: usize,
         f: fn(&Vec<usize>) -> bool,
         ans: &mut Vec<Vec<usize>>,
     ) {
-        // 順列を再帰的に生成してそれが条件fを満たすかどうか調べる
-        // 満たした場合,ansに入れる
-        // top + apply_permutation(n-1)
         if n == 1 {
-            // println!("{:?}", nums);
             if f(nums) {
                 ans.push(nums.clone())
             }
         }
 
         for i in 0..n {
+            // 再帰的に順列生成
             nums.swap(n - 1, i);
             Self::apply_permutation(nums, n - 1, f, ans);
             nums.swap(n - 1, i);
@@ -108,22 +113,18 @@ mod test {
     #[test]
     fn test_par_quene() {
         let anslen = [1, 0, 0, 2, 10, 4, 40, 92, 352, 724];
-        // let n = 8;
         for n in 1..=anslen.len() {
             let solver = NqueneSolver::new(n);
             let ans = solver.par_simple();
-            // println!("{:?}", ans);
             assert!(ans.lock().unwrap().len() == anslen[n - 1]);
         }
     }
     #[test]
     fn test_quene() {
         let anslen = [1, 0, 0, 2, 10, 4, 40, 92, 352, 724];
-        // let n = 8;
         for n in 1..=anslen.len() {
             let solver = NqueneSolver::new(n);
             let ans = solver.simple();
-            // println!("{:?}", ans);
             assert!(ans.len() == anslen[n - 1]);
         }
     }
