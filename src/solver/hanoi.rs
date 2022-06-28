@@ -64,7 +64,7 @@ impl HanoiSolver {
     pub fn move_val(&mut self, from: usize, to: usize, val: Data) -> PuzzleResult<Data> {
         // ガード
 
-        if from <= 2 && to <= 2 {
+        if from > 2 && to > 2 {
             return Err(PuzzleError::new(format!(
                 "invalid index: from:{}, to:{}: they must be in [0,2]",
                 from, to
@@ -84,7 +84,7 @@ impl HanoiSolver {
                 from, to, val, self
             )));
         }
-        if Some(&val) == self.towers[from].iter().next() {
+        if Some(&val) != self.towers[from].iter().next() {
             // fromから撮ってきた値と等しくなければおかしい
             return Err(PuzzleError::new(format!(
                 "invalid value: val must equal to towers[from]'s top, but val: {}, top: {}",

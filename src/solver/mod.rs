@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 pub mod hanoi;
+pub mod nquene;
 pub mod sudoku;
 
 #[derive(Debug)]

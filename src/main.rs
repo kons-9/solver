@@ -1,9 +1,14 @@
 mod solver;
+use std::time::Instant;
+
 use solver::hanoi::HanoiSolver;
+use solver::nquene::NqueneSolver;
 use solver::sudoku::SudokuSolver;
 use solver::Solver;
 fn main() {
     let run_sudoku = false;
+    let run_hanoi = false;
+    let run_queue = true;
     if run_sudoku {
         /////////////////////
         // 数独ソルバー
@@ -35,19 +40,6 @@ fn main() {
         println!("{}", flag);
         let flag = sudoku.num_search();
         println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        let flag = sudoku.num_search();
-        println!("{}", flag);
-        println!("{}", sudoku);
         sudoku.search().unwrap();
         println!("{}", sudoku);
         println!("{}", sudoku.has_finished().unwrap());
@@ -64,11 +56,12 @@ fn main() {
         ]);
         println!("{}", sudoku == ans);
     }
-    {
+    if run_hanoi {
         /////////////////////
         // hanoi solver
         /////////////////////
         let n = 6;
+
         let mut hanoi = HanoiSolver::new(n);
         println!("count: {}", hanoi.count());
         let _ = hanoi.run().unwrap();
@@ -84,6 +77,26 @@ fn main() {
         println!("fin: {}", hanoi.has_finished().unwrap());
         hanoi.redo();
         println!("fin: {}", hanoi.has_finished().unwrap());
+    }
+    if run_queue {
+        let n = 11;
+        let queue_solver = NqueneSolver::new(n);
+        let start = Instant::now();
+        queue_solver.simple();
+        let end = start.elapsed();
+        println!(
+            "simple: {}.{:03}s",
+            end.as_secs(),
+            end.subsec_nanos() / 1_000_000
+        );
+        let start = Instant::now();
+        queue_solver.par_simple();
+        let end = start.elapsed();
+        println!(
+            "par: {}.{:03}s",
+            end.as_secs(),
+            end.subsec_nanos() / 1_000_000
+        );
     }
 
     // println!("Hello, world!");
