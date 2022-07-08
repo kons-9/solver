@@ -3,6 +3,7 @@ use std::fmt::Display;
 pub mod fifteen_puzzle;
 pub mod hanoi;
 pub mod nquene;
+pub mod pentomino;
 pub mod sudoku;
 
 #[derive(Debug)]
