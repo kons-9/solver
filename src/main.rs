@@ -7,8 +7,8 @@ use solver::sudoku::SudokuSolver;
 use solver::Solver;
 fn main() {
     let run_sudoku = false;
-    let run_hanoi = false;
-    let run_queue = true;
+    let run_hanoi = true;
+    let run_queue = false;
     if run_sudoku {
         /////////////////////
         // 数独ソルバー
@@ -60,23 +60,35 @@ fn main() {
         /////////////////////
         // hanoi solver
         /////////////////////
-        let n = 6;
+        let n = 23;
 
         let mut hanoi = HanoiSolver::new(n);
-        println!("count: {}", hanoi.count());
-        let _ = hanoi.run().unwrap();
-        println!("history: {:?}", hanoi.history);
-        println!("towers: {:?}", hanoi.towers);
-        println!("fin: {}", hanoi.has_finished().unwrap());
+        // println!("count: {}", hanoi.count());
+        // let _ = hanoi.run().unwrap();
+        // println!("history: {:?}", hanoi.history);
+        // println!("towers: {:?}", hanoi.towers);
+        // println!("fin: {}", hanoi.has_finished().unwrap());
+        // hanoi.redo();
+        // println!("fin: {}", hanoi.has_finished().unwrap());
 
         hanoi.init();
-        println!("count: {}", hanoi.count());
+        let start = Instant::now();
         let _ = hanoi.all_run();
-        println!("history: {:?}", hanoi.history);
-        println!("towers: {:?}", hanoi.towers);
-        println!("fin: {}", hanoi.has_finished().unwrap());
+        let end = start.elapsed();
+        println!(
+            "simple: {}.{:03}s",
+            end.as_secs(),
+            end.subsec_nanos() / 1_000_000
+        );
         hanoi.redo();
-        println!("fin: {}", hanoi.has_finished().unwrap());
+        let start = Instant::now();
+        hanoi.all_par_run(4);
+        let end = start.elapsed();
+        println!(
+            "par: {}.{:03}s",
+            end.as_secs(),
+            end.subsec_nanos() / 1_000_000
+        );
     }
     if run_queue {
         let n = 11;

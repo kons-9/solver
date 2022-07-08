@@ -1,5 +1,7 @@
 use std::{cmp::min, collections::BTreeSet};
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use super::{PuzzleError, PuzzleResult, Solver};
 type Data = usize;
 #[derive(Debug)]
@@ -43,6 +45,9 @@ impl HanoiSolver {
     }
     /// 一手巻き戻す
     pub fn redo(&mut self) {
+        if self.state == 0 {
+            eprintln!("The state have initiarized");
+        }
         if let Some((from, to, val)) = self.history.pop() {
             // 逆に適用する
             self.move_val(to, from, val).unwrap();
@@ -107,6 +112,7 @@ impl HanoiSolver {
         std::mem::swap(&mut self.towers[2], &mut tmp);
         std::mem::swap(&mut self.towers[0], &mut tmp);
         std::mem::swap(&mut self.towers[2], &mut tmp);
+        self.state = self.count();
     }
     /// all_runの補助関数。再起関数で実装
     fn _all_run(from: usize, to: usize, val: Data) -> Vec<(usize, usize, Data)> {
@@ -118,6 +124,75 @@ impl HanoiSolver {
         vec.push((from, to, val));
         vec.extend(Self::_all_run(3 - from - to, to, val - 1));
         vec
+    }
+
+    pub fn all_par_run(&mut self, par_num: u32) {
+        self.history = Self::_all_par_run(0, 2, self.n, par_num);
+        let mut tmp = BTreeSet::new();
+        std::mem::swap(&mut self.towers[2], &mut tmp);
+        std::mem::swap(&mut self.towers[0], &mut tmp);
+        std::mem::swap(&mut self.towers[2], &mut tmp);
+        self.state = self.count();
+    }
+
+    /// 並行処理を行う
+    fn _all_par_run(
+        from: usize,
+        to: usize,
+        val: Data,
+        mut par_num: u32,
+    ) -> Vec<(usize, usize, Data)> {
+        assert_ne!(par_num, 0);
+        // par_numは2の累乗になるように設定
+        let par_rec_num = {
+            let mut cnt = 0;
+            while par_num != 0 {
+                cnt += 1;
+                par_num /= 2
+            }
+            cnt
+        };
+        fn make_vals(from: usize, to: usize, val: usize) -> Vec<(usize, usize, Data, bool)> {
+            if val == 1 {
+                vec![(from, to, val, false)]
+            } else {
+                vec![
+                    (from, 3 - from - to, val - 1, true),
+                    (from, to, val, false),
+                    (3 - from - to, to, val - 1, true),
+                ]
+            }
+        }
+
+        // (usize,usize,Data,bool): from, to, data, flag
+        let mut all_run_args = vec![(from, to, val, true)];
+
+        for _ in 0..par_rec_num {
+            let mut new_all_run_args = Vec::new();
+            for x @ (from, to, val, flag) in all_run_args {
+                if flag {
+                    new_all_run_args.extend(make_vals(from, to, val));
+                } else {
+                    new_all_run_args.push(x);
+                }
+            }
+            all_run_args = new_all_run_args;
+        }
+        let mut ans = Vec::new();
+        let anss: Vec<Vec<(usize, usize, Data)>> = all_run_args
+            .par_iter()
+            .map(|&(from, to, data, flag)| {
+                if flag {
+                    Self::_all_run(from, to, data)
+                } else {
+                    vec![(from, to, data)]
+                }
+            })
+            .collect();
+        for i in anss {
+            ans.extend(i);
+        }
+        ans
     }
 
     // 次の値を探す
@@ -284,6 +359,15 @@ mod test {
             assert!(HanoiSolver::_opt_count(i) == HanoiSolver::_tail_rec_count(i));
         }
         assert!(HanoiSolver::_opt_count(solver.n) == solver.count());
+    }
+    #[test]
+    fn test_par_run_all() {
+        let n = 10;
+        let mut solver = HanoiSolver::new(n);
+        solver.all_run();
+        let mut solver2 = HanoiSolver::new(n);
+        solver2.all_par_run(4);
+        assert_eq!(solver.history, solver2.history);
     }
     #[test]
     fn test_run_all() {
