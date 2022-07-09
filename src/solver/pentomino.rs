@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::hash::Hash;
 
 use super::PuzzleResult;
 use super::Solver;
@@ -78,6 +79,7 @@ impl Block {
             *y -= miny;
         }
         block.remove(minind);
+        block.sort();
         Block { block }
     }
 }
@@ -110,15 +112,17 @@ pub struct TargetBlock {
 
 impl TargetBlock {
     pub fn new(str: &str, l: i32, h: i32, id: u32, targettype: &TargetType) -> Self {
-        let block = Block::new(str, l, h);
+        let mut block = Block::new(str, l, h);
+        block.block.sort();
         match targettype {
             TargetType::ROTATE => {
-                let mut targetblock = HashSet::new();
+                let mut targetblock = Vec::new();
                 for i in 0..=3 {
-                    targetblock.insert(block.rotate(i));
+                    targetblock.push(block.rotate(i));
                 }
+
                 TargetBlock {
-                    block: targetblock.into_iter().collect(),
+                    block: targetblock,
                     id: char::from_u32(id).unwrap(),
                     ..Default::default()
                 }
@@ -190,7 +194,7 @@ impl PentominoSolver {
         .iter()
         .enumerate()
         .map(|(ind, &(str, x, y))| {
-            TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::FLIP)
+            TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::ROTATEFLIP)
         })
         .collect::<Vec<_>>();
 
@@ -350,6 +354,11 @@ mod test {
     #[test]
     fn pentomino_targetblock_test() {
         let targetblock = TargetBlock::new("010111010", 3, 3, 100, &TargetType::ROTATEFLIP);
+        assert_eq!(1, targetblock.block.len());
+        let targetblock = TargetBlock::new("110111010", 3, 3, 100, &TargetType::ROTATEFLIP);
+        assert_eq!(4, targetblock.block.len());
+        let targetblock = TargetBlock::new("11111", 1, 5, 100, &TargetType::ROTATEFLIP);
+        assert_eq!(2, targetblock.block.len());
         println!("{:?}", targetblock);
     }
 
