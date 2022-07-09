@@ -129,6 +129,12 @@ fn main() {
         println!("{}", solver);
         solver.init();
         println!("{}", solver.run_all());
+
+        let solver = PentominoSolver::meiji_black(puzzles::solver::pentomino::TargetType::ROTATE);
+        println!("{}", solver.search_one_ans());
+        println!("{}", solver);
+        solver.init();
+        println!("{}", solver.run_all());
     }
     // println!("Hello, world!");
 }

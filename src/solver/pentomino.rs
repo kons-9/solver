@@ -1,7 +1,7 @@
 //! ペンとミノ(or　ポリのみの)のソルバー
 
 use std::cell::RefCell;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::fmt::Display;
 use std::hash::Hash;
 
@@ -13,7 +13,7 @@ use super::Solver;
 /// |
 /// ↓
 /// y
-#[derive(Debug, Hash)]
+#[derive(Debug, Hash, PartialOrd, Ord)]
 pub struct Block {
     block: Vec<(i32, i32)>,
 }
@@ -120,8 +120,7 @@ pub struct TargetBlock {
 
 impl TargetBlock {
     pub fn new(str: &str, l: i32, h: i32, id: u32, targettype: &TargetType) -> Self {
-        let mut block = Block::new(str, l, h);
-        block.block.sort();
+        let block = Block::new(str, l, h);
         match targettype {
             TargetType::NOTHING => {
                 let targetblock = vec![block];
@@ -132,7 +131,7 @@ impl TargetBlock {
                 }
             }
             TargetType::ROTATE => {
-                let mut targetblock = HashSet::new();
+                let mut targetblock = BTreeSet::new();
                 for i in 0..=3 {
                     targetblock.insert(block.rotate(i));
                 }
@@ -144,7 +143,7 @@ impl TargetBlock {
                 }
             }
             TargetType::FLIP => {
-                let mut targetblock = HashSet::new();
+                let mut targetblock = BTreeSet::new();
                 targetblock.insert(block.flip());
                 targetblock.insert(block);
                 TargetBlock {
@@ -154,7 +153,7 @@ impl TargetBlock {
                 }
             }
             TargetType::ROTATEFLIP => {
-                let mut targetblock = HashSet::new();
+                let mut targetblock = BTreeSet::new();
                 for i in 0..=3 {
                     targetblock.insert(block.rotate(i));
                     targetblock.insert(block.flip().rotate(i));
@@ -212,10 +211,11 @@ impl PentominoSolver {
         .iter()
         .enumerate()
         .map(|(ind, &(str, x, y))| {
-            if ind == 1 {
+            if ind == 5 {
                 // 回転で形が変わる図形を一つ固定することで重複をとる
                 let mut tb = TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::NOTHING);
                 tb.block.push(Block::new(str, x, y).rotate(1));
+                println!("{:?}", tb);
                 tb
             } else {
                 TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::ROTATEFLIP)
@@ -227,6 +227,40 @@ impl PentominoSolver {
 
         PentominoSolver { blocks, field }
     }
+    pub fn meiji_black(targettype: TargetType) -> Self {
+        // 明治ブラックチョコレートパズルを実装する
+        let blocks = [
+            ("11101011", 4, 2),
+            ("111110100", 3, 3),
+            ("111101100", 3, 3),
+            ("010111101", 3, 3),
+            ("010111010010", 3, 4),
+            ("11100111", 4, 2),
+            ("11111010", 4, 2),
+            ("1111100001", 5, 2),
+            ("1111100010", 5, 2),
+            ("111000110010", 4, 3),
+            ("1111000011", 5, 2),
+        ]
+        .iter()
+        .enumerate()
+        .map(|(ind, &(str, x, y))| {
+            if ind == 0 {
+                // 回転で形が変わる図形を一つ固定することで重複をとる
+                let mut tb = TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::NOTHING);
+                tb.block.push(Block::new(str, x, y).rotate(1));
+                tb
+            } else {
+                TargetBlock::new(str, x, y, (ind + 100) as u32, &targettype)
+            }
+        })
+        .collect::<Vec<_>>();
+
+        let field = RefCell::new(vec![vec![None; 6]; 11]);
+
+        PentominoSolver { blocks, field }
+    }
+
     pub fn from_vec(
         vec: Vec<(&str, i32, i32)>,
         targettype: TargetType,
