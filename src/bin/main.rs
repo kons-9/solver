@@ -124,7 +124,11 @@ fn main() {
     if run_pentomino {
         println!("pentomino");
         let mut solver = PentominoSolver::new(10, 6);
+        println!("{}", solver.run_all());
         solver.run().unwrap();
+        println!("{}", solver);
+        solver.init();
+        println!("{}", solver.run_all());
     }
     // println!("Hello, world!");
 }

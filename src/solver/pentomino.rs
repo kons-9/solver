@@ -218,6 +218,16 @@ impl PentominoSolver {
 
         PentominoSolver { blocks, field }
     }
+    pub fn init(&self) {
+        for v in &mut *self.field.borrow_mut() {
+            for i in v {
+                *i = None;
+            }
+        }
+        for v in &self.blocks {
+            *v.used.borrow_mut() = false;
+        }
+    }
     #[inline]
     fn check(&self, block: &Block, h: i32, l: i32) -> bool {
         let field = self.field.borrow();
@@ -314,7 +324,40 @@ impl PentominoSolver {
             }
             *targetblock.used.borrow_mut() = false;
         }
+        if cnt >= 10000 {
+            println!("{}", cnt);
+            std::process::exit(0);
+        }
         cnt
+    }
+    pub fn search_one_ans(&self) -> bool {
+        self._search_one_ans(0, 0)
+    }
+    pub fn _search_one_ans(&self, pre_h: i32, pre_l: i32) -> bool {
+        let (h, l) = match self.find_upper_left(pre_h, pre_l) {
+            Some(x) => x,
+            None => {
+                // ない時は全部埋まっているということ
+                return true;
+            }
+        };
+        for targetblock in &self.blocks {
+            if *targetblock.used.borrow() {
+                continue;
+            }
+            *targetblock.used.borrow_mut() = true;
+            for one_kind_block in &targetblock.block {
+                if self.check(one_kind_block, h, l) {
+                    self.place(one_kind_block, targetblock.id, h, l);
+                    if self._search_one_ans(h, l) {
+                        return true;
+                    }
+                    self.place_back(one_kind_block, h, l);
+                }
+            }
+            *targetblock.used.borrow_mut() = false;
+        }
+        false
     }
 }
 
@@ -331,7 +374,7 @@ impl Solver for PentominoSolver {
         Ok(true)
     }
     fn search(&mut self) -> PuzzleResult<()> {
-        self.run_all();
+        self.search_one_ans();
         Ok(())
     }
 }
@@ -366,7 +409,7 @@ mod test {
     fn pentomino_test() {
         let solver = PentominoSolver::new(6, 10);
         let cnt = solver.run_all();
-        assert_eq!(cnt, 2339);
+        assert_eq!(cnt, 9356);
     }
     #[test]
     fn pentomino_place_test() {
