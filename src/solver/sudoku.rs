@@ -816,7 +816,7 @@ impl Display for SudokuSolver {
 
 #[cfg(test)]
 mod test {
-    use crate::*;
+    use super::*;
     #[test]
     fn easy_test() {
         let mut sudoku = SudokuSolver::new(vec![

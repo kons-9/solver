@@ -1,14 +1,15 @@
-mod solver;
 use std::time::Instant;
 
-use solver::hanoi::HanoiSolver;
-use solver::nquene::NqueneSolver;
-use solver::sudoku::SudokuSolver;
-use solver::Solver;
+use puzzles::solver::hanoi::HanoiSolver;
+use puzzles::solver::nquene::NqueneSolver;
+use puzzles::solver::pentomino::PentominoSolver;
+use puzzles::solver::sudoku::SudokuSolver;
+use puzzles::solver::Solver;
 fn main() {
     let run_sudoku = false;
-    let run_hanoi = true;
+    let run_hanoi = false;
     let run_queue = false;
+    let run_pentomino = true;
     if run_sudoku {
         /////////////////////
         // 数独ソルバー
@@ -91,6 +92,7 @@ fn main() {
         );
     }
     if run_queue {
+        println!("run_queue");
         let n = 11;
         let queue_solver = NqueneSolver::new(n);
         let start = Instant::now();
@@ -119,5 +121,10 @@ fn main() {
         );
     }
 
+    if run_pentomino {
+        println!("pentomino");
+        let mut solver = PentominoSolver::new(10, 6);
+        solver.run().unwrap();
+    }
     // println!("Hello, world!");
 }
