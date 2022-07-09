@@ -1,3 +1,5 @@
+//! ペンとミノ(or　ポリのみの)のソルバー
+
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::fmt::Display;
@@ -32,6 +34,7 @@ impl Block {
         Self::normalize(block)
     }
 
+    // x座標で反転させる
     pub fn flip(&self) -> Self {
         //
         let mut flip_block = Vec::new();
@@ -97,12 +100,17 @@ impl PartialEq for Block {
     }
 }
 impl Eq for Block {}
+
+/// blockの回転や反転を許すかどうか
 #[derive(Debug)]
 pub enum TargetType {
+    NOTHING,
     ROTATE,
     FLIP,
     ROTATEFLIP,
 }
+
+/// ブロックの反転や回転を一つにまとめたもの
 #[derive(Debug, Default)]
 pub struct TargetBlock {
     block: Vec<Block>,
@@ -115,14 +123,22 @@ impl TargetBlock {
         let mut block = Block::new(str, l, h);
         block.block.sort();
         match targettype {
+            TargetType::NOTHING => {
+                let targetblock = vec![block];
+                TargetBlock {
+                    block: targetblock,
+                    id: char::from_u32(id).unwrap(),
+                    ..Default::default()
+                }
+            }
             TargetType::ROTATE => {
-                let mut targetblock = Vec::new();
+                let mut targetblock = HashSet::new();
                 for i in 0..=3 {
-                    targetblock.push(block.rotate(i));
+                    targetblock.insert(block.rotate(i));
                 }
 
                 TargetBlock {
-                    block: targetblock,
+                    block: targetblock.into_iter().collect(),
                     id: char::from_u32(id).unwrap(),
                     ..Default::default()
                 }
@@ -154,6 +170,8 @@ impl TargetBlock {
 }
 
 type Field = Vec<Vec<Option<char>>>;
+/// ペントミノのソルば
+/// ガチガチの最適化はしてない(似たようなパズルも解けるように)
 #[derive(Debug)]
 pub struct PentominoSolver {
     blocks: Vec<TargetBlock>,
@@ -194,7 +212,14 @@ impl PentominoSolver {
         .iter()
         .enumerate()
         .map(|(ind, &(str, x, y))| {
-            TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::ROTATEFLIP)
+            if ind == 1 {
+                // 回転で形が変わる図形を一つ固定することで重複をとる
+                let mut tb = TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::NOTHING);
+                tb.block.push(Block::new(str, x, y).rotate(1));
+                tb
+            } else {
+                TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::ROTATEFLIP)
+            }
         })
         .collect::<Vec<_>>();
 
@@ -233,6 +258,7 @@ impl PentominoSolver {
         let field = self.field.borrow();
         #[cfg(test)]
         {
+            // パフォーマンスのためテストビルド
             assert!(
                 h >= 0 && (h as usize) < field.len() && l >= 0 && (l as usize) < field[0].len()
             );
@@ -245,7 +271,9 @@ impl PentominoSolver {
         for &(dx, dy) in &block.block {
             let nh = h + dy;
             let nl = l + dx;
+            // 境界条件
             if nh >= 0 && (nh as usize) < field.len() && nl >= 0 && (nl as usize) < field[0].len() {
+                // 値があれば入らない
                 if let Some(_) = self.field.borrow()[nh as usize][nl as usize] {
                     return false;
                 }
@@ -255,6 +283,8 @@ impl PentominoSolver {
         }
         true
     }
+
+    /// fieldに配置する関数
     #[inline]
     fn place(&self, block: &Block, id: char, h: i32, l: i32) {
         let mut field = self.field.borrow_mut();
@@ -266,6 +296,7 @@ impl PentominoSolver {
             (*field)[nh][nl] = Some(id);
         }
     }
+    /// フィールドに配置したものを取り除く関数
     #[inline]
     fn place_back(&self, block: &Block, h: i32, l: i32) {
         let mut field = self.field.borrow_mut();
@@ -276,9 +307,12 @@ impl PentominoSolver {
             (*field)[nh][nl] = None;
         }
     }
+    // 実行，個数を返す
     pub fn run_all(&self) -> u32 {
         self._run_all(0, 0)
     }
+
+    // 左上の空白を探す，前回の空白の位置をヒントにできる
     fn find_upper_left(&self, pre_h: i32, pre_l: i32) -> Option<(i32, i32)> {
         let field = self.field.borrow();
         for j in pre_l as usize..field[0].len() {
@@ -295,6 +329,7 @@ impl PentominoSolver {
         }
         None
     }
+
     fn _run_all(&self, pre_h: i32, pre_l: i32) -> u32 {
         // 左上に置くブロックを探す。
         // 条件を満たすか確認。
@@ -324,12 +359,9 @@ impl PentominoSolver {
             }
             *targetblock.used.borrow_mut() = false;
         }
-        if cnt >= 10000 {
-            println!("{}", cnt);
-            std::process::exit(0);
-        }
         cnt
     }
+    // 正解を一つ得る
     pub fn search_one_ans(&self) -> bool {
         self._search_one_ans(0, 0)
     }
@@ -409,7 +441,7 @@ mod test {
     fn pentomino_test() {
         let solver = PentominoSolver::new(6, 10);
         let cnt = solver.run_all();
-        assert_eq!(cnt, 9356);
+        assert_eq!(cnt, 2339);
     }
     #[test]
     fn pentomino_place_test() {
