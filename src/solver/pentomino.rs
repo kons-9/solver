@@ -190,7 +190,7 @@ impl PentominoSolver {
         .iter()
         .enumerate()
         .map(|(ind, &(str, x, y))| {
-            TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::ROTATEFLIP)
+            TargetBlock::new(str, x, y, (ind + 100) as u32, &TargetType::FLIP)
         })
         .collect::<Vec<_>>();
 
@@ -291,6 +291,7 @@ impl PentominoSolver {
         let (h, l) = match self.find_upper_left(pre_h, pre_l) {
             Some(x) => x,
             None => {
+                // ない時は全部埋まっているということ
                 return 1;
             }
         };
@@ -333,7 +334,7 @@ impl Solver for PentominoSolver {
 
 #[cfg(test)]
 mod test {
-    use super::{Block, PentominoSolver};
+    use super::{Block, PentominoSolver, TargetBlock, TargetType};
     /// Block tests
     #[test]
     fn pentomino_block_test() {
@@ -344,6 +345,12 @@ mod test {
         assert_eq!(block.rotate(2), Block::new("111011", 3, 2));
         assert_eq!(block.rotate(3), Block::new("011111", 2, 3));
         assert_eq!(block.rotate(4), Block::new("110111", 3, 2));
+    }
+
+    #[test]
+    fn pentomino_targetblock_test() {
+        let targetblock = TargetBlock::new("010111010", 3, 3, 100, &TargetType::ROTATEFLIP);
+        println!("{:?}", targetblock);
     }
 
     #[test]
@@ -390,6 +397,18 @@ mod test {
         assert_eq!(n, true);
         eprintln!("{}", solver);
         let n = solver.check(&block, 2, 0);
+        assert_eq!(n, true);
+        let n = solver.check(&block, 0, 7);
+        assert_eq!(n, true);
+        let n = solver.check(&block, 0, 8);
+        assert_eq!(n, false);
+        let n = solver.check(&block, 0, 9);
+        assert_eq!(n, false);
+        let n = solver.check(&block, 5, 7);
+        assert_eq!(n, false);
+        let n = solver.check(&block, 4, 7);
+        assert_eq!(n, false);
+        let n = solver.check(&block, 3, 7);
         assert_eq!(n, true);
     }
     #[test]
