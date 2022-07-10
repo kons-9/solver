@@ -111,7 +111,7 @@ pub enum TargetType {
 }
 
 /// ブロックの反転や回転を一つにまとめたもの
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct TargetBlock {
     block: Vec<Block>,
     id: char,
@@ -171,9 +171,10 @@ impl TargetBlock {
 type Field = Vec<Vec<Option<char>>>;
 /// ペントミノのソルば
 /// ガチガチの最適化はしてない(似たようなパズルも解けるように)
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct PentominoSolver {
     blocks: Vec<TargetBlock>,
+    // field[h][l]
     field: RefCell<Field>,
 }
 impl Display for PentominoSolver {
@@ -481,16 +482,50 @@ mod test {
     fn pentomino_place_test() {
         let solver = PentominoSolver::new(6, 10);
         let block = Block::new("110111", 3, 2);
-        solver.place(&block, char::from_u32(100).unwrap(), 0, 0);
-        eprintln!("solver: \n{}", solver);
-        solver.place(&block, char::from_u32(100).unwrap(), 3, 0);
-        eprintln!("solver: \n{}", solver);
+        let id = char::from_u32(100).unwrap();
+
+        solver.place(&block, id, 0, 0);
+        let solver2 = PentominoSolver::new(6, 10);
+        solver2.field.borrow_mut()[0][0] = Some(id);
+        solver2.field.borrow_mut()[1][0] = Some(id);
+        solver2.field.borrow_mut()[0][1] = Some(id);
+        solver2.field.borrow_mut()[1][1] = Some(id);
+        solver2.field.borrow_mut()[1][2] = Some(id);
+        assert_eq!(solver, solver2);
+
+        solver.place(&block, id, 3, 0);
+        solver2.field.borrow_mut()[3][0] = Some(id);
+        solver2.field.borrow_mut()[4][0] = Some(id);
+        solver2.field.borrow_mut()[3][1] = Some(id);
+        solver2.field.borrow_mut()[4][1] = Some(id);
+        solver2.field.borrow_mut()[4][2] = Some(id);
+        println!("{}", solver);
+        println!("{}", solver2);
+        assert_eq!(solver, solver2);
+
         solver.place_back(&block, 3, 0);
-        eprintln!("solver: \n{}", solver);
-        solver.place(&block, char::from_u32(100).unwrap(), 3, 3);
-        eprintln!("solver: \n{}", solver);
+        solver2.field.borrow_mut()[3][0] = None;
+        solver2.field.borrow_mut()[4][0] = None;
+        solver2.field.borrow_mut()[3][1] = None;
+        solver2.field.borrow_mut()[4][1] = None;
+        solver2.field.borrow_mut()[4][2] = None;
+        assert_eq!(solver, solver2);
+
+        solver.place(&block, id, 3, 3);
+        solver2.field.borrow_mut()[3][3] = Some(id);
+        solver2.field.borrow_mut()[4][3] = Some(id);
+        solver2.field.borrow_mut()[3][4] = Some(id);
+        solver2.field.borrow_mut()[4][4] = Some(id);
+        solver2.field.borrow_mut()[4][5] = Some(id);
+        assert_eq!(solver, solver2);
+
         solver.place_back(&block, 0, 0);
-        eprintln!("solver: \n{}", solver);
+        solver2.field.borrow_mut()[0][0] = None;
+        solver2.field.borrow_mut()[1][0] = None;
+        solver2.field.borrow_mut()[0][1] = None;
+        solver2.field.borrow_mut()[1][1] = None;
+        solver2.field.borrow_mut()[1][2] = None;
+        assert_eq!(solver, solver2);
     }
     #[test]
     #[should_panic]
