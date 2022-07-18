@@ -1,10 +1,39 @@
-use std::time::Instant;
+use std::fmt::Display;
+use std::time::{Duration, Instant};
 
 use puzzles::solver::hanoi::HanoiSolver;
 use puzzles::solver::nquene::NqueneSolver;
 use puzzles::solver::pentomino::PentominoSolver;
 use puzzles::solver::sudoku::SudokuSolver;
 use puzzles::solver::Solver;
+
+struct Time {
+    instant: Instant,
+    duration: Duration,
+}
+impl Time {
+    fn new() -> Self {
+        let instant = Instant::now();
+        let duration = instant.elapsed();
+        Time { instant, duration }
+    }
+    fn start(&mut self) {
+        self.instant = Instant::now();
+    }
+    fn end(&mut self) {
+        self.duration = self.instant.elapsed();
+    }
+}
+impl Display for Time {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}.{:03}s",
+            self.duration.as_secs(),
+            self.duration.subsec_nanos()
+        )
+    }
+}
 fn main() {
     // 実行サンプル
     // それぞれのflagの場所に実装がある
@@ -13,32 +42,23 @@ fn main() {
     let run_queue = false;
     let run_pentomino = true;
 
+    let mut timer = Time::new();
+
     if run_sudoku {
         /////////////////////
         // 数独ソルバー
         /////////////////////
         let mut sudoku = SudokuSolver::new(vec![
-            "000007000",
-            "020008040",
-            "103000000",
-            "000150000",
-            "000300070",
-            "000000089",
-            "090000000",
-            "080002000",
-            "000600100",
+            "902304501",
+            "000208000",
+            "758109423",
+            "604005792",
+            "000407000",
+            "217900845",
+            "106703904",
+            "000501000",
+            "509602317",
         ]);
-        // let mut sudoku = SudokuSolver::new(vec![
-        //     "902304501",
-        //     "000208000",
-        //     "758109423",
-        //     "604005792",
-        //     "000407000",
-        //     "217900845",
-        //     "106703904",
-        //     "000501000",
-        //     "509602317",
-        // ]);
         println!("{}", sudoku);
         let flag = sudoku.num_search();
         println!("{}", flag);
@@ -76,52 +96,40 @@ fn main() {
         // println!("fin: {}", hanoi.has_finished().unwrap());
 
         hanoi.init();
-        let start = Instant::now();
+
+        timer.start();
         let _ = hanoi.all_run();
-        let end = start.elapsed();
-        println!(
-            "simple: {}.{:03}s",
-            end.as_secs(),
-            end.subsec_nanos() / 1_000_000
-        );
+        timer.end();
+
+        println!("simple: {}", timer);
+
         hanoi.redo();
-        let start = Instant::now();
+
+        timer.start();
         hanoi.all_par_run(4);
-        let end = start.elapsed();
-        println!(
-            "par: {}.{:03}s",
-            end.as_secs(),
-            end.subsec_nanos() / 1_000_000
-        );
+        timer.end();
+
+        println!("par: {}", timer);
     }
     if run_queue {
         println!("run_queue");
         let n = 11;
         let queue_solver = NqueneSolver::new(n);
-        let start = Instant::now();
+
+        timer.start();
         queue_solver.simple();
-        let end = start.elapsed();
-        println!(
-            "simple: {}.{:03}s",
-            end.as_secs(),
-            end.subsec_nanos() / 1_000_000
-        );
-        let start = Instant::now();
+        timer.end();
+        println!("simple: {}", timer);
+
+        timer.start();
         queue_solver.par_simple();
-        let end = start.elapsed();
-        println!(
-            "par: {}.{:03}s",
-            end.as_secs(),
-            end.subsec_nanos() / 1_000_000
-        );
-        let start = Instant::now();
+        timer.end();
+        println!("par: {}", timer);
+
+        timer.start();
         queue_solver.dfs();
-        let end = start.elapsed();
-        println!(
-            "dfs: {}.{:03}s",
-            end.as_secs(),
-            end.subsec_nanos() / 1_000_000
-        );
+        timer.end();
+        println!("dfs: {}", timer);
     }
 
     if run_pentomino {
