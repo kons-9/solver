@@ -195,6 +195,7 @@ impl Display for PentominoSolver {
 
 impl PentominoSolver {
     pub fn new(fieldh: usize, fieldl: usize) -> Self {
+        // ペンとミノブロックを生成
         let blocks = [
             ("010111010", 3, 3),
             ("111101", 3, 2),
@@ -279,6 +280,7 @@ impl PentominoSolver {
         PentominoSolver { blocks, field }
     }
     pub fn init(&self) {
+        // field と blockのused flagをfalse
         for v in &mut *self.field.borrow_mut() {
             for i in v {
                 *i = None;
@@ -288,6 +290,7 @@ impl PentominoSolver {
             *v.used.borrow_mut() = false;
         }
     }
+    /// blockの左上をh, lとした時，配置可能か
     #[inline]
     fn check(&self, block: &Block, h: i32, l: i32) -> bool {
         let field = self.field.borrow();
@@ -396,7 +399,7 @@ impl PentominoSolver {
         }
         cnt
     }
-    // 正解を一つ得る
+    /// 正解を一つ得る
     pub fn search_one_ans(&self) -> bool {
         self._search_one_ans(0, 0)
     }

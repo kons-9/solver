@@ -6,10 +6,13 @@ use puzzles::solver::pentomino::PentominoSolver;
 use puzzles::solver::sudoku::SudokuSolver;
 use puzzles::solver::Solver;
 fn main() {
+    // 実行サンプル
+    // それぞれのflagの場所に実装がある
     let run_sudoku = false;
     let run_hanoi = false;
     let run_queue = false;
     let run_pentomino = true;
+
     if run_sudoku {
         /////////////////////
         // 数独ソルバー
@@ -136,5 +139,4 @@ fn main() {
         solver.init();
         println!("{}", solver.run_all());
     }
-    // println!("Hello, world!");
 }
